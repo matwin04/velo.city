@@ -1,16 +1,17 @@
 {
-  "name": "express",
+  "name": "velocity",
   "version": "1.0.0",
-  "description": "",
-  "type": "module",
-  "keywords": [],
-  "author": "",
+  "description": "Simplified BikeShare API",
   "license": "ISC",
-  "dependencies": {
-    "@types/express": "^5.0.0",
-    "express": "^4.18.2"
+  "author": "",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "devDependencies": {
-    "@types/node": "^22.0.0"
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-handlebars": "^9.0.1",
+    "nodemon": "^3.1.14"
   }
 }
