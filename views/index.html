@@ -33,7 +33,7 @@
 				border-bottom: 1px solid #e8e8e8;
 				flex-shrink: 0;
 				display: flex;
-				align-items: baseline;
+				align-items: center;
 				gap: 10px;
 			}
 			#header h1 {
@@ -43,6 +43,38 @@
 			#header p {
 				font-size: 13px;
 				color: #999;
+				flex: 1;
+			}
+
+			/* ── Legend ── */
+			#legend {
+				display: flex;
+				align-items: center;
+				gap: 14px;
+				flex-shrink: 0;
+			}
+			.legend-item {
+				display: flex;
+				align-items: center;
+				gap: 5px;
+				font-size: 12px;
+				color: #555;
+				cursor: pointer;
+				user-select: none;
+			}
+			.legend-dot {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				border: 2px solid rgba(0,0,0,0.15);
+				flex-shrink: 0;
+				transition: opacity 0.2s;
+			}
+			.legend-item.hidden .legend-dot {
+				opacity: 0.35;
+			}
+			.legend-item.hidden span {
+				color: #bbb;
 			}
 
 			/* ── Body: map + panel side by side on desktop ── */
@@ -92,6 +124,24 @@
 				font-size: 11px;
 				color: #bbb;
 				margin-top: 2px;
+			}
+			.panel-badge {
+				display: inline-block;
+				font-size: 10px;
+				font-weight: 600;
+				padding: 2px 6px;
+				border-radius: 4px;
+				margin-top: 4px;
+				text-transform: uppercase;
+				letter-spacing: 0.4px;
+			}
+			.panel-badge.metro {
+				background: #e8f7f2;
+				color: #1D9E75;
+			}
+			.panel-badge.veoride {
+				background: #eef0ff;
+				color: #5B67E8;
 			}
 			#panel-close {
 				background: none;
@@ -151,6 +201,9 @@
 			.stat-value.docks {
 				color: #378add;
 			}
+			.stat-value.purple {
+				color: #5B67E8;
+			}
 
 			.detail-row {
 				display: flex;
@@ -184,6 +237,14 @@
          MOBILE / BOTTOM SHEET  (≤ 640px)
          ════════════════════════════════════════ */
 			@media (max-width: 640px) {
+				#header {
+					flex-wrap: wrap;
+					gap: 6px;
+				}
+				#legend {
+					width: 100%;
+					gap: 10px;
+				}
 				#body {
 					flex-direction: column;
 				}
@@ -192,7 +253,6 @@
 					width: 100%;
 					border-right: none;
 					border-top: 1px solid #e8e8e8;
-					/* collapsed: just show a drag handle strip */
 					height: 48px;
 					transition: height 0.3s ease;
 					flex-shrink: 0;
@@ -209,13 +269,11 @@
 					height: auto;
 				}
 
-				/* On mobile the "header" doubles as the drag handle */
 				#panel-header {
 					padding: 10px 14px 8px !important;
 					cursor: pointer;
 				}
 
-				/* Show a visual drag handle bar */
 				#panel-header::before {
 					content: "";
 					display: block;
@@ -237,12 +295,10 @@
 					width: 100%;
 				}
 
-				/* Always show header on mobile (as the collapsed handle) */
 				#panel-header {
 					display: flex !important;
 				}
 
-				/* Hide content until open */
 				#panel-body {
 					display: none;
 				}
@@ -262,12 +318,21 @@
 		<div id="app">
 			<div id="header">
 				<h1>VeloCity</h1>
-				<p>LA Metro Bike Share</p>
+				<p>LA Bike Share</p>
+				<div id="legend">
+					<div class="legend-item" id="toggle-metro" onclick="toggleLayer('metro')">
+						<div class="legend-dot" style="background:#1D9E75;"></div>
+						<span>LA Metro Bike Share</span>
+					</div>
+					<div class="legend-item" id="toggle-veoride" onclick="toggleLayer('veoride')">
+						<div class="legend-dot" style="background:#5B67E8;"></div>
+						<span>VeoRide (XLA)</span>
+					</div>
+				</div>
 			</div>
 			<div id="body">
-				<div id="sidepanel" id="sidepanel">
+				<div id="sidepanel">
 					<div id="panel-header">
-						<!-- mobile wraps name+close in an inner div -->
 						<div
 							id="panel-header-inner"
 							style="display: flex; align-items: flex-start; gap: 8px; width: 100%">
@@ -281,23 +346,11 @@
 					<div id="panel-body">
 						<div id="panel-empty">
 							<div class="icon">🚲</div>
-							Click a station on the map<br />to see live details
+							Click a station or bike<br />on the map to see details
 						</div>
-						<div id="panel-content" style="display: none">
-							<div class="stat-grid">
-								<div class="stat-card">
-									<div class="stat-label">Bikes</div>
-									<div class="stat-value" id="stat-bikes">—</div>
-								</div>
-								<div class="stat-card">
-									<div class="stat-label">Docks</div>
-									<div class="stat-value docks" id="stat-docks">—</div>
-								</div>
-							</div>
-							<div id="detail-rows"></div>
-						</div>
+						<div id="panel-content" style="display: none"></div>
 					</div>
-					<div id="status-bar">Loading stations…</div>
+					<div id="status-bar">Loading…</div>
 				</div>
 
 				<div id="map"></div>
@@ -315,7 +368,6 @@
 			const panelName = document.getElementById("panel-name");
 			const panelId = document.getElementById("panel-id");
 
-			// Mobile: tap header to toggle sheet
 			panelHeader.addEventListener("click", (e) => {
 				if (!isMobile()) return;
 				if (e.target === panelClose) return;
@@ -328,38 +380,101 @@
 			});
 
 			let selectedId = null;
-			let allFeatures = [];
+			let selectedSystem = null; // 'metro' | 'veoride'
+			let metroFeatures = [];
+			let veoFeatures = [];
 
-			function showStation(props) {
+			const layerVisible = { metro: true, veoride: true };
+
+			function toggleLayer(sys) {
+				layerVisible[sys] = !layerVisible[sys];
+				const toggle = document.getElementById("toggle-" + sys);
+				toggle.classList.toggle("hidden", !layerVisible[sys]);
+				const layerId = sys === "metro" ? "station-circles" : "veo-circles";
+				if (map.getLayer(layerId)) {
+					map.setLayoutProperty(layerId, "visibility", layerVisible[sys] ? "visible" : "none");
+				}
+			}
+
+			function showMetroStation(props) {
 				selectedId = props.station_id;
+				selectedSystem = "metro";
 				panelClose.style.display = "block";
 				panelEmpty.style.display = "none";
 				panelContent.style.display = "block";
 
 				panelName.textContent = props.name;
-				panelId.textContent = "ID: " + props.station_id;
+				panelId.innerHTML = `ID: ${props.station_id} <span class="panel-badge metro">Metro Bike</span>`;
 
-				document.getElementById("stat-bikes").textContent = props.bikes;
-				document.getElementById("stat-docks").textContent = props.docks;
+				panelContent.innerHTML = `
+					<div class="stat-grid">
+						<div class="stat-card">
+							<div class="stat-label">Bikes</div>
+							<div class="stat-value">${props.bikes}</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-label">Docks</div>
+							<div class="stat-value docks">${props.docks}</div>
+						</div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Capacity</span><span>${props.capacity}</span></div>
+						<div class="detail-row"><span>Bikes disabled</span><span>${props.bikes_disabled}</span></div>
+						<div class="detail-row"><span>Docks disabled</span><span>${props.docks_disabled}</span></div>
+						<div class="detail-row"><span>Renting</span><span>${props.is_renting === "true" ? "✅ Yes" : "❌ No"}</span></div>
+						<div class="detail-row"><span>Returning</span><span>${props.is_returning === "true" ? "✅ Yes" : "❌ No"}</span></div>
+					</div>
+				`;
 
-				document.getElementById("detail-rows").innerHTML = `
-          <div class="detail-row"><span>Capacity</span><span>${props.capacity}</span></div>
-          <div class="detail-row"><span>Bikes disabled</span><span>${props.bikes_disabled}</span></div>
-          <div class="detail-row"><span>Docks disabled</span><span>${props.docks_disabled}</span></div>
-          <div class="detail-row"><span>Renting</span><span>${props.is_renting === "true" ? "✅ Yes" : "❌ No"}</span></div>
-          <div class="detail-row"><span>Returning</span><span>${props.is_returning === "true" ? "✅ Yes" : "❌ No"}</span></div>
-        `;
+				if (isMobile()) panel.classList.add("open");
+				highlightSelected();
+			}
 
-				// On desktop show panel; on mobile expand sheet
-				if (isMobile()) {
-					panel.classList.add("open");
-				}
+			function showVeoBike(props) {
+				selectedId = props.bike_id;
+				selectedSystem = "veoride";
+				panelClose.style.display = "block";
+				panelEmpty.style.display = "none";
+				panelContent.style.display = "block";
 
+				const rangeMi = props.current_range_meters > 0
+					? (props.current_range_meters / 1609.34).toFixed(1) + " mi"
+					: "—";
+
+				panelName.textContent = "VeoRide E-Bike";
+				panelId.innerHTML = `#${props.bike_id.slice(0, 8)}… <span class="panel-badge veoride">VeoRide</span>`;
+
+				const typeLabel = props.vehicle_type_id === "4" ? "⚡ E-Bike" : "🚲 Bike";
+				const statusLabel = props.is_disabled === "true"
+					? "❌ Disabled"
+					: props.is_reserved === "true"
+					? "🔒 Reserved"
+					: "✅ Available";
+
+				panelContent.innerHTML = `
+					<div class="stat-grid">
+						<div class="stat-card">
+							<div class="stat-label">Range</div>
+							<div class="stat-value purple" style="font-size:18px">${rangeMi}</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-label">Type</div>
+							<div class="stat-value" style="font-size:18px">${typeLabel}</div>
+						</div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Status</span><span>${statusLabel}</span></div>
+						<div class="detail-row"><span>Bike ID</span><span style="font-size:10px;word-break:break-all">${props.bike_id}</span></div>
+					</div>
+				`;
+
+				if (isMobile()) panel.classList.add("open");
 				highlightSelected();
 			}
 
 			function closePanel() {
 				selectedId = null;
+				selectedSystem = null;
 				panelClose.style.display = "none";
 				panelEmpty.style.display = "block";
 				panelContent.style.display = "none";
@@ -371,18 +486,41 @@
 
 			function highlightSelected() {
 				if (!map.getSource("stations")) return;
+
+				// Metro highlight
 				map.setPaintProperty("station-circles", "circle-color", [
 					"case",
-					["==", ["get", "station_id"], selectedId ?? ""],
+					["==", ["get", "station_id"], selectedSystem === "metro" ? selectedId ?? "" : ""],
 					"#0F6E56",
 					"#1D9E75"
 				]);
 				map.setPaintProperty("station-circles", "circle-radius", [
 					"case",
-					["==", ["get", "station_id"], selectedId ?? ""],
+					["==", ["get", "station_id"], selectedSystem === "metro" ? selectedId ?? "" : ""],
 					9,
 					6
 				]);
+
+				// VeoRide highlight
+				if (map.getSource("veo-bikes")) {
+					map.setPaintProperty("veo-circles", "circle-color", [
+						"case",
+						["==", ["get", "bike_id"], selectedSystem === "veoride" ? selectedId ?? "" : ""],
+						"#3340C0",
+						[
+							"case",
+							["==", ["get", "is_disabled"], "true"], "#aaa",
+							["==", ["get", "is_reserved"], "true"], "#9BA3F5",
+							"#5B67E8"
+						]
+					]);
+					map.setPaintProperty("veo-circles", "circle-radius", [
+						"case",
+						["==", ["get", "bike_id"], selectedSystem === "veoride" ? selectedId ?? "" : ""],
+						9,
+						5
+					]);
+				}
 			}
 
 			const map = new maplibregl.Map({
@@ -393,11 +531,11 @@
 			});
 
 			map.on("load", () => {
+				// ── Metro Bike Share (stations) ──
 				map.addSource("stations", {
 					type: "geojson",
 					data: { type: "FeatureCollection", features: [] }
 				});
-
 				map.addLayer({
 					id: "station-circles",
 					type: "circle",
@@ -410,27 +548,55 @@
 					}
 				});
 
+				// ── VeoRide (free-floating bikes) ──
+				map.addSource("veo-bikes", {
+					type: "geojson",
+					data: { type: "FeatureCollection", features: [] }
+				});
+				map.addLayer({
+					id: "veo-circles",
+					type: "circle",
+					source: "veo-bikes",
+					paint: {
+						"circle-radius": 5,
+						"circle-color": [
+							"case",
+							["==", ["get", "is_disabled"], "true"], "#aaa",
+							["==", ["get", "is_reserved"], "true"], "#9BA3F5",
+							"#5B67E8"
+						],
+						"circle-stroke-width": 2,
+						"circle-stroke-color": "#ffffff"
+					}
+				});
+
+				// ── Click handlers ──
 				map.on("click", "station-circles", (e) => {
-					showStation(e.features[0].properties);
+					showMetroStation(e.features[0].properties);
 				});
-
+				map.on("click", "veo-circles", (e) => {
+					showVeoBike(e.features[0].properties);
+				});
 				map.on("click", (e) => {
-					const hits = map.queryRenderedFeatures(e.point, { layers: ["station-circles"] });
-					if (!hits.length) closePanel();
+					const metro = map.queryRenderedFeatures(e.point, { layers: ["station-circles"] });
+					const veo = map.queryRenderedFeatures(e.point, { layers: ["veo-circles"] });
+					if (!metro.length && !veo.length) closePanel();
 				});
 
-				map.on("mouseenter", "station-circles", () => {
-					map.getCanvas().style.cursor = "pointer";
-				});
-				map.on("mouseleave", "station-circles", () => {
-					map.getCanvas().style.cursor = "";
+				["station-circles", "veo-circles"].forEach((id) => {
+					map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
+					map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
 				});
 
-				loadStations();
-				setInterval(loadStations, 60000);
+				loadAll();
+				setInterval(loadAll, 60000);
 			});
 
-			async function loadStations() {
+			async function loadAll() {
+				await Promise.all([loadMetro(), loadVeo()]);
+			}
+
+			async function loadMetro() {
 				try {
 					const [infoRes, statusRes] = await Promise.all([
 						fetch("https://gbfs.bcycle.com/bcycle_lametro/station_information.json"),
@@ -445,10 +611,7 @@
 					}
 
 					const stations = infoData.data?.stations || [];
-					document.getElementById("status-bar").textContent =
-						`${stations.length} stations · updates every 60s`;
-
-					allFeatures = stations
+					metroFeatures = stations
 						.filter((s) => s.lat && s.lon)
 						.map((s) => {
 							const st = statusMap[s.station_id] || {};
@@ -469,20 +632,66 @@
 							};
 						});
 
-					map.getSource("stations").setData({
-						type: "FeatureCollection",
-						features: allFeatures
-					});
-
-					if (selectedId) {
-						const match = allFeatures.find((f) => f.properties.station_id === selectedId);
-						if (match) showStation(match.properties);
+					if (map.getSource("stations")) {
+						map.getSource("stations").setData({ type: "FeatureCollection", features: metroFeatures });
 					}
 
-					highlightSelected();
+					if (selectedSystem === "metro" && selectedId) {
+						const match = metroFeatures.find((f) => f.properties.station_id === selectedId);
+						if (match) showMetroStation(match.properties);
+					}
+
+					updateStatusBar(stations.length, null);
 				} catch (err) {
-					document.getElementById("status-bar").textContent = "Error: " + err.message;
+					document.getElementById("status-bar").textContent = "Metro error: " + err.message;
 				}
+			}
+
+			let veoCount = 0;
+
+			async function loadVeo() {
+				try {
+					const res = await fetch("https://cluster-prod.veoride.com/api/shares/name/xla/gbfs/free_bike_status");
+					const data = await res.json();
+					const bikes = data.data?.bikes || [];
+					veoCount = bikes.length;
+
+					veoFeatures = bikes
+						.filter((b) => b.lat && b.lon)
+						.map((b) => ({
+							type: "Feature",
+							geometry: { type: "Point", coordinates: [b.lon, b.lat] },
+							properties: {
+								bike_id: b.bike_id,
+								is_reserved: String(b.is_reserved),
+								is_disabled: String(b.is_disabled),
+								vehicle_type_id: String(b.vehicle_type_id),
+								current_range_meters: b.current_range_meters ?? 0
+							}
+						}));
+
+					if (map.getSource("veo-bikes")) {
+						map.getSource("veo-bikes").setData({ type: "FeatureCollection", features: veoFeatures });
+					}
+
+					if (selectedSystem === "veoride" && selectedId) {
+						const match = veoFeatures.find((f) => f.properties.bike_id === selectedId);
+						if (match) showVeoBike(match.properties);
+					}
+
+					updateStatusBar(null, bikes.length);
+				} catch (err) {
+					console.warn("VeoRide load error:", err.message);
+				}
+			}
+
+			let metroCount = 0;
+			function updateStatusBar(metro, veo) {
+				if (metro !== null) metroCount = metro;
+				if (veo !== null) veoCount = veo;
+				document.getElementById("status-bar").textContent =
+					`Metro: ${metroCount} stations · VeoRide: ${veoCount} bikes · updates every 60s`;
+				highlightSelected();
 			}
 		</script>
 	</body>
