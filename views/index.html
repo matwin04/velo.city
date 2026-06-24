@@ -7,25 +7,11 @@
 		<script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
 		<link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
 		<style>
-			* {
-				box-sizing: border-box;
-				margin: 0;
-				padding: 0;
-			}
+			* { box-sizing: border-box; margin: 0; padding: 0; }
 
-			html,
-			body {
-				height: 100%;
-				font-family: sans-serif;
-				overflow: hidden;
-				background: #fff;
-			}
+			html, body { height: 100%; font-family: sans-serif; overflow: hidden; background: #fff; }
 
-			#app {
-				display: flex;
-				flex-direction: column;
-				height: 100vh;
-			}
+			#app { display: flex; flex-direction: column; height: 100vh; }
 
 			/* ── Header ── */
 			#header {
@@ -35,282 +21,109 @@
 				display: flex;
 				align-items: center;
 				gap: 10px;
+				flex-wrap: wrap;
 			}
-			#header h1 {
-				font-size: 20px;
-				font-weight: 700;
-			}
-			#header p {
-				font-size: 13px;
-				color: #999;
-				flex: 1;
-			}
+			#header h1 { font-size: 20px; font-weight: 700; }
+			#header p { font-size: 13px; color: #999; }
 
 			/* ── Legend ── */
-			#legend {
-				display: flex;
-				align-items: center;
-				gap: 14px;
-				flex-shrink: 0;
-			}
+			#legend { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
 			.legend-item {
-				display: flex;
-				align-items: center;
-				gap: 5px;
-				font-size: 12px;
-				color: #555;
-				cursor: pointer;
-				user-select: none;
+				display: flex; align-items: center; gap: 5px;
+				font-size: 12px; color: #555; cursor: pointer; user-select: none;
 			}
 			.legend-dot {
-				width: 12px;
-				height: 12px;
-				border-radius: 50%;
-				border: 2px solid rgba(0,0,0,0.15);
-				flex-shrink: 0;
-				transition: opacity 0.2s;
+				width: 11px; height: 11px; border-radius: 50%;
+				border: 2px solid rgba(0,0,0,0.12); flex-shrink: 0; transition: opacity 0.2s;
 			}
-			.legend-item.hidden .legend-dot {
-				opacity: 0.35;
-			}
-			.legend-item.hidden span {
-				color: #bbb;
-			}
+			.legend-item.hidden .legend-dot { opacity: 0.3; }
+			.legend-item.hidden span { color: #ccc; }
 
-			/* ── Body: map + panel side by side on desktop ── */
-			#body {
-				display: flex;
-				flex: 1;
-				overflow: hidden;
-			}
+			/* ── Body ── */
+			#body { display: flex; flex: 1; overflow: hidden; }
 
-			/* ── Side panel (left on desktop) ── */
 			#sidepanel {
-				width: 280px;
-				flex-shrink: 0;
+				width: 280px; flex-shrink: 0;
 				border-right: 1px solid #e8e8e8;
-				display: flex;
-				flex-direction: column;
-				background: #fff;
-				overflow: hidden;
-				transition: width 0.25s ease;
+				display: flex; flex-direction: column;
+				background: #fff; overflow: hidden;
 			}
 
-			#map {
-				flex: 1;
-				height: 100%;
-			}
+			#map { flex: 1; height: 100%; }
 
-			/* ── Panel inner ── */
+			/* ── Panel header ── */
 			#panel-header {
 				padding: 14px 14px 10px;
 				border-bottom: 1px solid #f0f0f0;
-				display: none;
-				align-items: flex-start;
-				gap: 8px;
+				display: none; align-items: flex-start; gap: 8px;
 			}
-			#panel-header-text {
-				flex: 1;
-				min-width: 0;
-			}
-			#panel-name {
-				font-size: 14px;
-				font-weight: 600;
-				word-break: break-word;
-				line-height: 1.3;
-				color: #111;
-			}
-			#panel-id {
-				font-size: 11px;
-				color: #bbb;
-				margin-top: 2px;
-			}
-			.panel-badge {
-				display: inline-block;
-				font-size: 10px;
-				font-weight: 600;
-				padding: 2px 6px;
-				border-radius: 4px;
-				margin-top: 4px;
-				text-transform: uppercase;
-				letter-spacing: 0.4px;
-			}
-			.panel-badge.metro {
-				background: #e8f7f2;
-				color: #1D9E75;
-			}
-			.panel-badge.veoride {
-				background: #eef0ff;
-				color: #5B67E8;
-			}
-			#panel-close {
-				background: none;
-				border: none;
-				cursor: pointer;
-				font-size: 17px;
-				color: #bbb;
-				padding: 0;
-				line-height: 1;
-				flex-shrink: 0;
-			}
-			#panel-close:hover {
-				color: #444;
-			}
+			#panel-header-text { flex: 1; min-width: 0; }
+			#panel-name { font-size: 14px; font-weight: 600; word-break: break-word; line-height: 1.3; color: #111; }
+			#panel-id { font-size: 11px; color: #bbb; margin-top: 2px; }
 
-			#panel-body {
-				padding: 14px;
-				overflow-y: auto;
-				flex: 1;
+			.panel-badge {
+				display: inline-block; font-size: 10px; font-weight: 600;
+				padding: 2px 6px; border-radius: 4px; margin-top: 4px;
+				text-transform: uppercase; letter-spacing: 0.4px;
 			}
+			.badge-metro  { background: #e8f7f2; color: #1D9E75; }
+			.badge-veoride { background: #eef0ff; color: #5B67E8; }
+			.badge-spin   { background: #fff4e8; color: #E07B2A; }
+			.badge-bird   { background: #f0e8ff; color: #8B3DC8; }
+
+			#panel-close {
+				background: none; border: none; cursor: pointer;
+				font-size: 17px; color: #bbb; padding: 0; line-height: 1; flex-shrink: 0;
+			}
+			#panel-close:hover { color: #444; }
+
+			#panel-body { padding: 14px; overflow-y: auto; flex: 1; }
 
 			#panel-empty {
-				padding: 40px 16px;
-				text-align: center;
-				color: #ccc;
-				font-size: 13px;
-				line-height: 1.6;
+				padding: 40px 16px; text-align: center;
+				color: #ccc; font-size: 13px; line-height: 1.6;
 			}
-			#panel-empty .icon {
-				font-size: 30px;
-				margin-bottom: 8px;
-			}
+			#panel-empty .icon { font-size: 30px; margin-bottom: 8px; }
 
-			.stat-grid {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 8px;
-				margin-bottom: 14px;
-			}
-			.stat-card {
-				background: #f7f9f8;
-				border-radius: 8px;
-				padding: 10px 12px;
-			}
-			.stat-label {
-				font-size: 10px;
-				color: #999;
-				margin-bottom: 3px;
-				text-transform: uppercase;
-				letter-spacing: 0.4px;
-			}
-			.stat-value {
-				font-size: 24px;
-				font-weight: 700;
-				color: #1d9e75;
-			}
-			.stat-value.docks {
-				color: #378add;
-			}
-			.stat-value.purple {
-				color: #5B67E8;
-			}
+			.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+			.stat-card { background: #f7f9f8; border-radius: 8px; padding: 10px 12px; }
+			.stat-label { font-size: 10px; color: #999; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+			.stat-value { font-size: 22px; font-weight: 700; color: #1d9e75; }
 
 			.detail-row {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				font-size: 12px;
-				padding: 7px 0;
-				border-bottom: 1px solid #f4f4f4;
-				color: #777;
+				display: flex; justify-content: space-between; align-items: center;
+				font-size: 12px; padding: 7px 0; border-bottom: 1px solid #f4f4f4; color: #777;
 			}
-			.detail-row:last-child {
-				border-bottom: none;
-			}
-			.detail-row span:last-child {
-				font-weight: 500;
-				color: #222;
-			}
+			.detail-row:last-child { border-bottom: none; }
+			.detail-row span:last-child { font-weight: 500; color: #222; }
 
 			#status-bar {
-				padding: 5px 12px;
-				font-size: 11px;
-				color: #bbb;
-				border-top: 1px solid #f0f0f0;
-				flex-shrink: 0;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
+				padding: 5px 12px; font-size: 11px; color: #bbb;
+				border-top: 1px solid #f0f0f0; flex-shrink: 0;
+				white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 			}
 
-			/* ════════════════════════════════════════
-         MOBILE / BOTTOM SHEET  (≤ 640px)
-         ════════════════════════════════════════ */
+			/* ── Mobile ── */
 			@media (max-width: 640px) {
-				#header {
-					flex-wrap: wrap;
-					gap: 6px;
-				}
-				#legend {
-					width: 100%;
-					gap: 10px;
-				}
-				#body {
-					flex-direction: column;
-				}
-
+				#body { flex-direction: column; }
 				#sidepanel {
-					width: 100%;
-					border-right: none;
-					border-top: 1px solid #e8e8e8;
-					height: 48px;
-					transition: height 0.3s ease;
-					flex-shrink: 0;
-					order: 2;
+					width: 100%; border-right: none; border-top: 1px solid #e8e8e8;
+					height: 48px; transition: height 0.3s ease; flex-shrink: 0; order: 2;
 				}
-
-				#sidepanel.open {
-					height: 52vh;
-				}
-
-				#map {
-					order: 1;
-					flex: 1;
-					height: auto;
-				}
-
-				#panel-header {
-					padding: 10px 14px 8px !important;
-					cursor: pointer;
-				}
-
+				#sidepanel.open { height: 52vh; }
+				#map { order: 1; flex: 1; height: auto; }
+				#panel-header { padding: 10px 14px 8px !important; cursor: pointer; }
 				#panel-header::before {
-					content: "";
-					display: block;
-					width: 36px;
-					height: 4px;
-					background: #ddd;
-					border-radius: 2px;
-					margin: 0 auto 8px;
-					flex-shrink: 0;
+					content: ""; display: block; width: 36px; height: 4px;
+					background: #ddd; border-radius: 2px; margin: 0 auto 8px; flex-shrink: 0;
 				}
-
-				#panel-header {
-					flex-direction: column;
-				}
-				#panel-header-inner {
-					display: flex;
-					align-items: flex-start;
-					gap: 8px;
-					width: 100%;
-				}
-
-				#panel-header {
-					display: flex !important;
-				}
-
-				#panel-body {
-					display: none;
-				}
-				#sidepanel.open #panel-body {
-					display: block;
-				}
-				#status-bar {
-					display: none;
-				}
-				#sidepanel.open #status-bar {
-					display: block;
-				}
+				#panel-header { flex-direction: column; display: flex !important; }
+				#panel-header-inner { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+				#panel-body { display: none; }
+				#sidepanel.open #panel-body { display: block; }
+				#status-bar { display: none; }
+				#sidepanel.open #status-bar { display: block; }
+				#legend { justify-content: flex-start; }
 			}
 		</style>
 	</head>
@@ -321,38 +134,39 @@
 				<p>LA Bike Share</p>
 				<div id="legend">
 					<div class="legend-item" id="toggle-metro" onclick="toggleLayer('metro')">
-						<div class="legend-dot" style="background:#1D9E75;"></div>
-						<span>LA Metro Bike Share</span>
+						<div class="legend-dot" style="background:#1D9E75;"></div><span>LA Metro</span>
 					</div>
 					<div class="legend-item" id="toggle-veoride" onclick="toggleLayer('veoride')">
-						<div class="legend-dot" style="background:#5B67E8;"></div>
-						<span>VeoRide (XLA)</span>
+						<div class="legend-dot" style="background:#5B67E8;"></div><span>VeoRide</span>
+					</div>
+					<div class="legend-item" id="toggle-spin" onclick="toggleLayer('spin')">
+						<div class="legend-dot" style="background:#E07B2A;"></div><span>Spin</span>
+					</div>
+					<div class="legend-item" id="toggle-bird" onclick="toggleLayer('bird')">
+						<div class="legend-dot" style="background:#8B3DC8;"></div><span>Bird</span>
 					</div>
 				</div>
 			</div>
 			<div id="body">
 				<div id="sidepanel">
 					<div id="panel-header">
-						<div
-							id="panel-header-inner"
-							style="display: flex; align-items: flex-start; gap: 8px; width: 100%">
-							<div id="panel-header-text" style="flex: 1; min-width: 0">
+						<div id="panel-header-inner" style="display:flex;align-items:flex-start;gap:8px;width:100%">
+							<div id="panel-header-text" style="flex:1;min-width:0">
 								<div id="panel-name">Tap a station</div>
 								<div id="panel-id"></div>
 							</div>
-							<button id="panel-close" title="Close" style="display: none">✕</button>
+							<button id="panel-close" title="Close" style="display:none">✕</button>
 						</div>
 					</div>
 					<div id="panel-body">
 						<div id="panel-empty">
 							<div class="icon">🚲</div>
-							Click a station or bike<br />on the map to see details
+							Click a vehicle or station<br>on the map to see details
 						</div>
-						<div id="panel-content" style="display: none"></div>
+						<div id="panel-content" style="display:none"></div>
 					</div>
 					<div id="status-bar">Loading…</div>
 				</div>
-
 				<div id="map"></div>
 			</div>
 		</div>
@@ -360,338 +174,381 @@
 		<script>
 			const isMobile = () => window.innerWidth <= 640;
 
-			const panel = document.getElementById("sidepanel");
-			const panelHeader = document.getElementById("panel-header");
-			const panelClose = document.getElementById("panel-close");
-			const panelEmpty = document.getElementById("panel-empty");
-			const panelContent = document.getElementById("panel-content");
-			const panelName = document.getElementById("panel-name");
-			const panelId = document.getElementById("panel-id");
+			const panel      = document.getElementById('sidepanel');
+			const panelHeader = document.getElementById('panel-header');
+			const panelClose  = document.getElementById('panel-close');
+			const panelEmpty  = document.getElementById('panel-empty');
+			const panelContent = document.getElementById('panel-content');
+			const panelName   = document.getElementById('panel-name');
+			const panelId     = document.getElementById('panel-id');
 
-			panelHeader.addEventListener("click", (e) => {
-				if (!isMobile()) return;
-				if (e.target === panelClose) return;
-				panel.classList.toggle("open");
+			panelHeader.addEventListener('click', e => {
+				if (!isMobile() || e.target === panelClose) return;
+				panel.classList.toggle('open');
 			});
+			panelClose.addEventListener('click', e => { e.stopPropagation(); closePanel(); });
 
-			panelClose.addEventListener("click", (e) => {
-				e.stopPropagation();
-				closePanel();
-			});
+			let selectedId = null, selectedSystem = null;
 
-			let selectedId = null;
-			let selectedSystem = null; // 'metro' | 'veoride'
-			let metroFeatures = [];
-			let veoFeatures = [];
-
-			const layerVisible = { metro: true, veoride: true };
+			const layerVisible = { metro: true, veoride: true, spin: true, bird: true };
 
 			function toggleLayer(sys) {
 				layerVisible[sys] = !layerVisible[sys];
-				const toggle = document.getElementById("toggle-" + sys);
-				toggle.classList.toggle("hidden", !layerVisible[sys]);
-				const layerId = sys === "metro" ? "station-circles" : "veo-circles";
-				if (map.getLayer(layerId)) {
-					map.setLayoutProperty(layerId, "visibility", layerVisible[sys] ? "visible" : "none");
+				document.getElementById('toggle-' + sys).classList.toggle('hidden', !layerVisible[sys]);
+				const ids = { metro: ['station-circles'], veoride: ['veo-circles'], spin: ['spin-circles'], bird: ['bird-circles'] };
+				for (const lid of ids[sys]) {
+					if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', layerVisible[sys] ? 'visible' : 'none');
 				}
 			}
 
-			function showMetroStation(props) {
-				selectedId = props.station_id;
-				selectedSystem = "metro";
-				panelClose.style.display = "block";
-				panelEmpty.style.display = "none";
-				panelContent.style.display = "block";
+			// ── Bird vehicle type map (fetched at load) ──
+			const birdVehicleTypes = {};
 
-				panelName.textContent = props.name;
-				panelId.innerHTML = `ID: ${props.station_id} <span class="panel-badge metro">Metro Bike</span>`;
-
-				panelContent.innerHTML = `
-					<div class="stat-grid">
-						<div class="stat-card">
-							<div class="stat-label">Bikes</div>
-							<div class="stat-value">${props.bikes}</div>
-						</div>
-						<div class="stat-card">
-							<div class="stat-label">Docks</div>
-							<div class="stat-value docks">${props.docks}</div>
-						</div>
-					</div>
-					<div>
-						<div class="detail-row"><span>Capacity</span><span>${props.capacity}</span></div>
-						<div class="detail-row"><span>Bikes disabled</span><span>${props.bikes_disabled}</span></div>
-						<div class="detail-row"><span>Docks disabled</span><span>${props.docks_disabled}</span></div>
-						<div class="detail-row"><span>Renting</span><span>${props.is_renting === "true" ? "✅ Yes" : "❌ No"}</span></div>
-						<div class="detail-row"><span>Returning</span><span>${props.is_returning === "true" ? "✅ Yes" : "❌ No"}</span></div>
-					</div>
-				`;
-
-				if (isMobile()) panel.classList.add("open");
-				highlightSelected();
-			}
-
-			function showVeoBike(props) {
-				selectedId = props.bike_id;
-				selectedSystem = "veoride";
-				panelClose.style.display = "block";
-				panelEmpty.style.display = "none";
-				panelContent.style.display = "block";
-
-				const rangeMi = props.current_range_meters > 0
-					? (props.current_range_meters / 1609.34).toFixed(1) + " mi"
-					: "—";
-
-				panelName.textContent = "VeoRide E-Bike";
-				panelId.innerHTML = `#${props.bike_id.slice(0, 8)}… <span class="panel-badge veoride">VeoRide</span>`;
-
-				const typeLabel = props.vehicle_type_id === "4" ? "⚡ E-Bike" : "🚲 Bike";
-				const statusLabel = props.is_disabled === "true"
-					? "❌ Disabled"
-					: props.is_reserved === "true"
-					? "🔒 Reserved"
-					: "✅ Available";
-
-				panelContent.innerHTML = `
-					<div class="stat-grid">
-						<div class="stat-card">
-							<div class="stat-label">Range</div>
-							<div class="stat-value purple" style="font-size:18px">${rangeMi}</div>
-						</div>
-						<div class="stat-card">
-							<div class="stat-label">Type</div>
-							<div class="stat-value" style="font-size:18px">${typeLabel}</div>
-						</div>
-					</div>
-					<div>
-						<div class="detail-row"><span>Status</span><span>${statusLabel}</span></div>
-						<div class="detail-row"><span>Bike ID</span><span style="font-size:10px;word-break:break-all">${props.bike_id}</span></div>
-					</div>
-				`;
-
-				if (isMobile()) panel.classList.add("open");
+			// ── Panel helpers ──
+			function openPanel(name, idHtml, contentHtml) {
+				panelClose.style.display = 'block';
+				panelEmpty.style.display = 'none';
+				panelContent.style.display = 'block';
+				panelName.textContent = name;
+				panelId.innerHTML = idHtml;
+				panelContent.innerHTML = contentHtml;
+				if (isMobile()) panel.classList.add('open');
 				highlightSelected();
 			}
 
 			function closePanel() {
-				selectedId = null;
-				selectedSystem = null;
-				panelClose.style.display = "none";
-				panelEmpty.style.display = "block";
-				panelContent.style.display = "none";
-				panelName.textContent = isMobile() ? "Tap a station" : "";
-				panelId.textContent = "";
-				panel.classList.remove("open");
+				selectedId = null; selectedSystem = null;
+				panelClose.style.display = 'none';
+				panelEmpty.style.display = 'block';
+				panelContent.style.display = 'none';
+				panelName.textContent = isMobile() ? 'Tap a vehicle' : '';
+				panelId.textContent = '';
+				panel.classList.remove('open');
 				highlightSelected();
 			}
 
+			function rangeMi(meters) {
+				return meters > 0 ? (meters / 1609.34).toFixed(1) + ' mi' : '—';
+			}
+
+			function battPct(pct) {
+				if (pct == null || pct < 0) return '—';
+				const p = Math.round(pct * 100);
+				const emoji = p >= 70 ? '🟢' : p >= 30 ? '🟡' : '🔴';
+				return emoji + ' ' + p + '%';
+			}
+
+			function availLabel(is_disabled, is_reserved) {
+				if (is_disabled === 'true') return '❌ Disabled';
+				if (is_reserved === 'true') return '🔒 Reserved';
+				return '✅ Available';
+			}
+
+			// ── Show functions ──
+			function showMetroStation(p) {
+				selectedId = p.station_id; selectedSystem = 'metro';
+				openPanel(p.name,
+					`ID: ${p.station_id} <span class="panel-badge badge-metro">Metro Bike</span>`,
+					`<div class="stat-grid">
+						<div class="stat-card"><div class="stat-label">Bikes</div><div class="stat-value" style="color:#1D9E75">${p.bikes}</div></div>
+						<div class="stat-card"><div class="stat-label">Docks</div><div class="stat-value" style="color:#378add">${p.docks}</div></div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Capacity</span><span>${p.capacity}</span></div>
+						<div class="detail-row"><span>Bikes disabled</span><span>${p.bikes_disabled}</span></div>
+						<div class="detail-row"><span>Docks disabled</span><span>${p.docks_disabled}</span></div>
+						<div class="detail-row"><span>Renting</span><span>${p.is_renting === 'true' ? '✅ Yes' : '❌ No'}</span></div>
+						<div class="detail-row"><span>Returning</span><span>${p.is_returning === 'true' ? '✅ Yes' : '❌ No'}</span></div>
+					</div>`
+				);
+			}
+
+			function showVeoBike(p) {
+				selectedId = p.bike_id; selectedSystem = 'veoride';
+				const typeLabel = p.vehicle_type_id === '4' ? '⚡ E-Bike' : '🚲 Bike';
+				openPanel('VeoRide E-Bike',
+					`#${p.bike_id.slice(0,8)}… <span class="panel-badge badge-veoride">VeoRide</span>`,
+					`<div class="stat-grid">
+						<div class="stat-card"><div class="stat-label">Range</div><div class="stat-value" style="color:#5B67E8;font-size:18px">${rangeMi(+p.current_range_meters)}</div></div>
+						<div class="stat-card"><div class="stat-label">Type</div><div class="stat-value" style="font-size:16px">${typeLabel}</div></div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Status</span><span>${availLabel(p.is_disabled, p.is_reserved)}</span></div>
+					</div>`
+				);
+			}
+
+			function showSpinBike(p) {
+				selectedId = p.bike_id; selectedSystem = 'spin';
+				const typeLabel = p.form_factor === 'scooter' ? '🛴 Scooter' : p.form_factor === 'bicycle' ? '🚲 Bike' : '⚡ E-Bike';
+				openPanel('Spin Vehicle',
+					`#${p.bike_id.slice(0,8)}… <span class="panel-badge badge-spin">Spin</span>`,
+					`<div class="stat-grid">
+						<div class="stat-card"><div class="stat-label">Range</div><div class="stat-value" style="color:#E07B2A;font-size:18px">${rangeMi(+p.current_range_meters)}</div></div>
+						<div class="stat-card"><div class="stat-label">Battery</div><div class="stat-value" style="font-size:14px;padding-top:4px">${battPct(+p.current_fuel_percent)}</div></div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Type</span><span>${typeLabel}</span></div>
+						<div class="detail-row"><span>Status</span><span>${availLabel(p.is_disabled, p.is_reserved)}</span></div>
+					</div>`
+				);
+			}
+
+			function showBirdBike(p) {
+				selectedId = p.bike_id; selectedSystem = 'bird';
+				const vt = birdVehicleTypes[p.vehicle_type_id] || {};
+				const typeLabel = vt.form_factor === 'scooter' ? '🛴 Scooter' : vt.form_factor === 'bicycle' ? '🚲 Bike' : '⚡ E-Bike';
+				openPanel('Bird Vehicle',
+					`#${p.bike_id.slice(0,8)}… <span class="panel-badge badge-bird">Bird</span>`,
+					`<div class="stat-grid">
+						<div class="stat-card"><div class="stat-label">Range</div><div class="stat-value" style="color:#8B3DC8;font-size:18px">${rangeMi(+p.current_range_meters)}</div></div>
+						<div class="stat-card"><div class="stat-label">Battery</div><div class="stat-value" style="font-size:14px;padding-top:4px">${battPct(+p.current_fuel_percent)}</div></div>
+					</div>
+					<div>
+						<div class="detail-row"><span>Type</span><span>${typeLabel}</span></div>
+						<div class="detail-row"><span>Status</span><span>${availLabel(p.is_disabled, p.is_reserved)}</span></div>
+					</div>`
+				);
+			}
+
+			// ── Highlight ──
 			function highlightSelected() {
-				if (!map.getSource("stations")) return;
-
-				// Metro highlight
-				map.setPaintProperty("station-circles", "circle-color", [
-					"case",
-					["==", ["get", "station_id"], selectedSystem === "metro" ? selectedId ?? "" : ""],
-					"#0F6E56",
-					"#1D9E75"
-				]);
-				map.setPaintProperty("station-circles", "circle-radius", [
-					"case",
-					["==", ["get", "station_id"], selectedSystem === "metro" ? selectedId ?? "" : ""],
-					9,
-					6
-				]);
-
-				// VeoRide highlight
-				if (map.getSource("veo-bikes")) {
-					map.setPaintProperty("veo-circles", "circle-color", [
-						"case",
-						["==", ["get", "bike_id"], selectedSystem === "veoride" ? selectedId ?? "" : ""],
-						"#3340C0",
-						[
-							"case",
-							["==", ["get", "is_disabled"], "true"], "#aaa",
-							["==", ["get", "is_reserved"], "true"], "#9BA3F5",
-							"#5B67E8"
-						]
-					]);
-					map.setPaintProperty("veo-circles", "circle-radius", [
-						"case",
-						["==", ["get", "bike_id"], selectedSystem === "veoride" ? selectedId ?? "" : ""],
-						9,
-						5
-					]);
+				const layers = [
+					{ id: 'station-circles', sys: 'metro',   key: 'station_id', baseColor: '#1D9E75', selColor: '#0F6E56', baseR: 6, selR: 9 },
+					{ id: 'veo-circles',     sys: 'veoride', key: 'bike_id',    baseColor: null,      selColor: '#3340C0', baseR: 5, selR: 9 },
+					{ id: 'spin-circles',    sys: 'spin',    key: 'bike_id',    baseColor: null,      selColor: '#9D4E0F', baseR: 5, selR: 9 },
+					{ id: 'bird-circles',    sys: 'bird',    key: 'bike_id',    baseColor: null,      selColor: '#5A1E8A', baseR: 5, selR: 9 },
+				];
+				for (const l of layers) {
+					if (!map.getLayer(l.id)) continue;
+					const matchId = selectedSystem === l.sys ? (selectedId ?? '') : '';
+					// radius
+					map.setPaintProperty(l.id, 'circle-radius', ['case', ['==', ['get', l.key], matchId], l.selR, l.baseR]);
+					// color — for veo/spin/bird we preserve per-feature status coloring
+					if (l.baseColor) {
+						map.setPaintProperty(l.id, 'circle-color', ['case', ['==', ['get', l.key], matchId], l.selColor, l.baseColor]);
+					} else {
+						// inject selection highlight on top of status expression
+						const statusExpr = statusColorExpr(l.sys);
+						map.setPaintProperty(l.id, 'circle-color', ['case', ['==', ['get', l.key], matchId], l.selColor, statusExpr]);
+					}
 				}
 			}
 
+			function statusColorExpr(sys) {
+				const colors = { veoride: ['#aaa', '#9BA3F5', '#5B67E8'], spin: ['#aaa', '#F5C49B', '#E07B2A'], bird: ['#aaa', '#D4A8F0', '#8B3DC8'] };
+				const [dis, res, avail] = colors[sys];
+				return ['case', ['==', ['get', 'is_disabled'], 'true'], dis, ['==', ['get', 'is_reserved'], 'true'], res, avail];
+			}
+
+			// ── Map ──
 			const map = new maplibregl.Map({
-				container: "map",
-				style: "https://tiles.versatiles.org/assets/styles/colorful/style.json",
-				center: [-118.25, 34.05],
+				container: 'map',
+				style: 'https://tiles.versatiles.org/assets/styles/colorful/style.json',
+				center: [-118.28, 34.03],
 				zoom: 11
 			});
 
-			map.on("load", () => {
-				// ── Metro Bike Share (stations) ──
-				map.addSource("stations", {
-					type: "geojson",
-					data: { type: "FeatureCollection", features: [] }
-				});
-				map.addLayer({
-					id: "station-circles",
-					type: "circle",
-					source: "stations",
-					paint: {
-						"circle-radius": 6,
-						"circle-color": "#1D9E75",
-						"circle-stroke-width": 2,
-						"circle-stroke-color": "#ffffff"
-					}
-				});
+			map.on('load', async () => {
+				// Fetch Bird vehicle types
+				try {
+					const vtRes = await fetch('https://mds.bird.co/gbfs/v2/public/los-angeles/vehicle_types.json');
+					const vtData = await vtRes.json();
+					for (const vt of vtData.data?.vehicle_types || []) birdVehicleTypes[vt.vehicle_type_id] = vt;
+				} catch(e) { console.warn('Bird vehicle types:', e.message); }
 
-				// ── VeoRide (free-floating bikes) ──
-				map.addSource("veo-bikes", {
-					type: "geojson",
-					data: { type: "FeatureCollection", features: [] }
-				});
-				map.addLayer({
-					id: "veo-circles",
-					type: "circle",
-					source: "veo-bikes",
-					paint: {
-						"circle-radius": 5,
-						"circle-color": [
-							"case",
-							["==", ["get", "is_disabled"], "true"], "#aaa",
-							["==", ["get", "is_reserved"], "true"], "#9BA3F5",
-							"#5B67E8"
-						],
-						"circle-stroke-width": 2,
-						"circle-stroke-color": "#ffffff"
-					}
-				});
+				// ── Sources & Layers ──
+				const systems = [
+					{ id: 'stations',   layer: 'station-circles', color: '#1D9E75', radius: 6 },
+					{ id: 'veo-bikes',  layer: 'veo-circles',     color: null,      radius: 5 },
+					{ id: 'spin-bikes', layer: 'spin-circles',    color: null,      radius: 5 },
+					{ id: 'bird-bikes', layer: 'bird-circles',    color: null,      radius: 5 },
+				];
+				for (const s of systems) {
+					map.addSource(s.id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+					map.addLayer({
+						id: s.layer, type: 'circle', source: s.id,
+						paint: {
+							'circle-radius': s.radius,
+							'circle-color': s.color ?? '#aaa',
+							'circle-stroke-width': 2,
+							'circle-stroke-color': '#ffffff'
+						}
+					});
+				}
 
 				// ── Click handlers ──
-				map.on("click", "station-circles", (e) => {
-					showMetroStation(e.features[0].properties);
-				});
-				map.on("click", "veo-circles", (e) => {
-					showVeoBike(e.features[0].properties);
-				});
-				map.on("click", (e) => {
-					const metro = map.queryRenderedFeatures(e.point, { layers: ["station-circles"] });
-					const veo = map.queryRenderedFeatures(e.point, { layers: ["veo-circles"] });
-					if (!metro.length && !veo.length) closePanel();
-				});
-
-				["station-circles", "veo-circles"].forEach((id) => {
-					map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
-					map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
+				const handlers = {
+					'station-circles': (p) => showMetroStation(p),
+					'veo-circles':     (p) => showVeoBike(p),
+					'spin-circles':    (p) => showSpinBike(p),
+					'bird-circles':    (p) => showBirdBike(p),
+				};
+				for (const [lid, fn] of Object.entries(handlers)) {
+					map.on('click', lid, e => fn(e.features[0].properties));
+					map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
+					map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
+				}
+				map.on('click', e => {
+					const hits = Object.keys(handlers).some(lid => map.queryRenderedFeatures(e.point, { layers: [lid] }).length);
+					if (!hits) closePanel();
 				});
 
 				loadAll();
 				setInterval(loadAll, 60000);
 			});
 
-			async function loadAll() {
-				await Promise.all([loadMetro(), loadVeo()]);
+			// ── Counts ──
+			const counts = { metro: 0, veoride: 0, spin: 0, bird: 0 };
+
+			function updateStatus() {
+				document.getElementById('status-bar').textContent =
+					`Metro: ${counts.metro} stations · VeoRide: ${counts.veoride} · Spin: ${counts.spin} · Bird: ${counts.bird} · updates every 60s`;
 			}
 
+			async function loadAll() {
+				await Promise.all([loadMetro(), loadVeoRide(), loadSpin(), loadBird()]);
+			}
+
+			// ── Metro ──
+			let selectedMetroProps = null;
 			async function loadMetro() {
 				try {
 					const [infoRes, statusRes] = await Promise.all([
-						fetch("https://gbfs.bcycle.com/bcycle_lametro/station_information.json"),
-						fetch("https://gbfs.bcycle.com/bcycle_lametro/station_status.json")
+						fetch('https://gbfs.bcycle.com/bcycle_lametro/station_information.json'),
+						fetch('https://gbfs.bcycle.com/bcycle_lametro/station_status.json')
 					]);
-
 					const infoData = await infoRes.json();
-					let statusMap = {};
+					const statusMap = {};
 					if (statusRes.ok) {
 						const sd = await statusRes.json();
 						for (const s of sd.data?.stations || []) statusMap[s.station_id] = s;
 					}
-
 					const stations = infoData.data?.stations || [];
-					metroFeatures = stations
-						.filter((s) => s.lat && s.lon)
-						.map((s) => {
-							const st = statusMap[s.station_id] || {};
-							return {
-								type: "Feature",
-								geometry: { type: "Point", coordinates: [s.lon, s.lat] },
-								properties: {
-									station_id: s.station_id,
-									name: s.name,
-									capacity: s.capacity ?? "—",
-									bikes: st.num_bikes_available ?? "—",
-									docks: st.num_docks_available ?? "—",
-									bikes_disabled: st.num_bikes_disabled ?? "—",
-									docks_disabled: st.num_docks_disabled ?? "—",
-									is_renting: String(st.is_renting ?? false),
-									is_returning: String(st.is_returning ?? false)
-								}
-							};
-						});
-
-					if (map.getSource("stations")) {
-						map.getSource("stations").setData({ type: "FeatureCollection", features: metroFeatures });
+					counts.metro = stations.length;
+					const features = stations.filter(s => s.lat && s.lon).map(s => {
+						const st = statusMap[s.station_id] || {};
+						return {
+							type: 'Feature',
+							geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
+							properties: {
+								station_id: s.station_id, name: s.name,
+								capacity: s.capacity ?? '—',
+								bikes: st.num_bikes_available ?? '—',
+								docks: st.num_docks_available ?? '—',
+								bikes_disabled: st.num_bikes_disabled ?? '—',
+								docks_disabled: st.num_docks_disabled ?? '—',
+								is_renting: String(st.is_renting ?? false),
+								is_returning: String(st.is_returning ?? false)
+							}
+						};
+					});
+					map.getSource('stations').setData({ type: 'FeatureCollection', features });
+					if (selectedSystem === 'metro' && selectedId) {
+						const m = features.find(f => f.properties.station_id === selectedId);
+						if (m) showMetroStation(m.properties);
 					}
-
-					if (selectedSystem === "metro" && selectedId) {
-						const match = metroFeatures.find((f) => f.properties.station_id === selectedId);
-						if (match) showMetroStation(match.properties);
-					}
-
-					updateStatusBar(stations.length, null);
-				} catch (err) {
-					document.getElementById("status-bar").textContent = "Metro error: " + err.message;
-				}
+					updateStatus(); highlightSelected();
+				} catch(e) { console.warn('Metro:', e.message); }
 			}
 
-			let veoCount = 0;
-
-			async function loadVeo() {
+			// ── VeoRide ──
+			async function loadVeoRide() {
 				try {
-					const res = await fetch("https://cluster-prod.veoride.com/api/shares/name/xla/gbfs/free_bike_status");
+					const res = await fetch('https://cluster-prod.veoride.com/api/shares/name/xla/gbfs/free_bike_status');
 					const data = await res.json();
 					const bikes = data.data?.bikes || [];
-					veoCount = bikes.length;
+					counts.veoride = bikes.length;
+					const features = bikes.filter(b => b.lat && b.lon).map(b => ({
+						type: 'Feature',
+						geometry: { type: 'Point', coordinates: [b.lon, b.lat] },
+						properties: {
+							bike_id: b.bike_id,
+							is_reserved: String(b.is_reserved),
+							is_disabled: String(b.is_disabled),
+							vehicle_type_id: String(b.vehicle_type_id),
+							current_range_meters: b.current_range_meters ?? 0
+						}
+					}));
+					map.getSource('veo-bikes').setData({ type: 'FeatureCollection', features });
+					// re-apply status colors
+					map.setPaintProperty('veo-circles', 'circle-color', statusColorExpr('veoride'));
+					if (selectedSystem === 'veoride' && selectedId) {
+						const m = features.find(f => f.properties.bike_id === selectedId);
+						if (m) showVeoBike(m.properties);
+					}
+					updateStatus(); highlightSelected();
+				} catch(e) { console.warn('VeoRide:', e.message); }
+			}
 
-					veoFeatures = bikes
-						.filter((b) => b.lat && b.lon)
-						.map((b) => ({
-							type: "Feature",
-							geometry: { type: "Point", coordinates: [b.lon, b.lat] },
+			// ── Spin ──
+			async function loadSpin() {
+				try {
+					const res = await fetch('https://gbfs.spin.pm/api/gbfs/v2_3/los_angeles/free_bike_status');
+					const data = await res.json();
+					const bikes = data.data?.bikes || [];
+					counts.spin = bikes.length;
+
+					// We need vehicle_types to get form_factor
+					let spinVehicleTypes = {};
+					try {
+						const vtRes = await fetch('https://gbfs.spin.pm/api/gbfs/v2_3/los_angeles/vehicle_types');
+						const vtData = await vtRes.json();
+						for (const vt of vtData.data?.vehicle_types || []) spinVehicleTypes[vt.vehicle_type_id] = vt;
+					} catch(_) {}
+
+					const features = bikes.filter(b => b.lat && b.lon).map(b => {
+						const vt = spinVehicleTypes[b.vehicle_type_id] || {};
+						return {
+							type: 'Feature',
+							geometry: { type: 'Point', coordinates: [b.lon, b.lat] },
 							properties: {
 								bike_id: b.bike_id,
 								is_reserved: String(b.is_reserved),
 								is_disabled: String(b.is_disabled),
-								vehicle_type_id: String(b.vehicle_type_id),
-								current_range_meters: b.current_range_meters ?? 0
+								form_factor: vt.form_factor || 'bicycle',
+								current_range_meters: b.current_range_meters ?? 0,
+								current_fuel_percent: b.current_fuel_percent ?? -1
 							}
-						}));
-
-					if (map.getSource("veo-bikes")) {
-						map.getSource("veo-bikes").setData({ type: "FeatureCollection", features: veoFeatures });
+						};
+					});
+					map.getSource('spin-bikes').setData({ type: 'FeatureCollection', features });
+					map.setPaintProperty('spin-circles', 'circle-color', statusColorExpr('spin'));
+					if (selectedSystem === 'spin' && selectedId) {
+						const m = features.find(f => f.properties.bike_id === selectedId);
+						if (m) showSpinBike(m.properties);
 					}
-
-					if (selectedSystem === "veoride" && selectedId) {
-						const match = veoFeatures.find((f) => f.properties.bike_id === selectedId);
-						if (match) showVeoBike(match.properties);
-					}
-
-					updateStatusBar(null, bikes.length);
-				} catch (err) {
-					console.warn("VeoRide load error:", err.message);
-				}
+					updateStatus(); highlightSelected();
+				} catch(e) { console.warn('Spin:', e.message); }
 			}
 
-			let metroCount = 0;
-			function updateStatusBar(metro, veo) {
-				if (metro !== null) metroCount = metro;
-				if (veo !== null) veoCount = veo;
-				document.getElementById("status-bar").textContent =
-					`Metro: ${metroCount} stations · VeoRide: ${veoCount} bikes · updates every 60s`;
-				highlightSelected();
+			// ── Bird ──
+			async function loadBird() {
+				try {
+					const res = await fetch('https://mds.bird.co/gbfs/v2/public/los-angeles/free_bike_status.json');
+					const data = await res.json();
+					const bikes = data.data?.bikes || [];
+					counts.bird = bikes.length;
+					const features = bikes.filter(b => b.lat && b.lon).map(b => ({
+						type: 'Feature',
+						geometry: { type: 'Point', coordinates: [b.lon, b.lat] },
+						properties: {
+							bike_id: b.bike_id,
+							is_reserved: String(b.is_reserved),
+							is_disabled: String(b.is_disabled),
+							vehicle_type_id: b.vehicle_type_id,
+							current_range_meters: b.current_range_meters ?? 0,
+							current_fuel_percent: b.current_fuel_percent ?? -1
+						}
+					}));
+					map.getSource('bird-bikes').setData({ type: 'FeatureCollection', features });
+					map.setPaintProperty('bird-circles', 'circle-color', statusColorExpr('bird'));
+					if (selectedSystem === 'bird' && selectedId) {
+						const m = features.find(f => f.properties.bike_id === selectedId);
+						if (m) showBirdBike(m.properties);
+					}
+					updateStatus(); highlightSelected();
+				} catch(e) { console.warn('Bird:', e.message); }
 			}
 		</script>
 	</body>
