@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import multer from "multer";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
 import session from 'express-session';
