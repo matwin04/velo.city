@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>VeloCity — Bike Share Data Explorer</title>
+		<script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+		<link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+		<style>
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			html,
+			body {
+				height: 100%;
+				font-family: sans-serif;
+				overflow: hidden;
+				background: #fff;
+			}
+
+			#app {
+				display: flex;
+				flex-direction: column;
+				height: 100vh;
+			}
+
+			/* ── Header ── */
+			#header {
+				padding: 10px 16px 8px;
+				border-bottom: 1px solid #e8e8e8;
+				flex-shrink: 0;
+				display: flex;
+				align-items: baseline;
+				gap: 10px;
+			}
+			#header h1 {
+				font-size: 20px;
+				font-weight: 700;
+			}
+			#header p {
+				font-size: 13px;
+				color: #999;
+			}
+
+			/* ── Body: map + panel side by side on desktop ── */
+			#body {
+				display: flex;
+				flex: 1;
+				overflow: hidden;
+			}
+
+			/* ── Side panel (left on desktop) ── */
+			#sidepanel {
+				width: 280px;
+				flex-shrink: 0;
+				border-right: 1px solid #e8e8e8;
+				display: flex;
+				flex-direction: column;
+				background: #fff;
+				overflow: hidden;
+				transition: width 0.25s ease;
+			}
+
+			#map {
+				flex: 1;
+				height: 100%;
+			}
+
+			/* ── Panel inner ── */
+			#panel-header {
+				padding: 14px 14px 10px;
+				border-bottom: 1px solid #f0f0f0;
+				display: none;
+				align-items: flex-start;
+				gap: 8px;
+			}
+			#panel-header-text {
+				flex: 1;
+				min-width: 0;
+			}
+			#panel-name {
+				font-size: 14px;
+				font-weight: 600;
+				word-break: break-word;
+				line-height: 1.3;
+				color: #111;
+			}
+			#panel-id {
+				font-size: 11px;
+				color: #bbb;
+				margin-top: 2px;
+			}
+			#panel-close {
+				background: none;
+				border: none;
+				cursor: pointer;
+				font-size: 17px;
+				color: #bbb;
+				padding: 0;
+				line-height: 1;
+				flex-shrink: 0;
+			}
+			#panel-close:hover {
+				color: #444;
+			}
+
+			#panel-body {
+				padding: 14px;
+				overflow-y: auto;
+				flex: 1;
+			}
+
+			#panel-empty {
+				padding: 40px 16px;
+				text-align: center;
+				color: #ccc;
+				font-size: 13px;
+				line-height: 1.6;
+			}
+			#panel-empty .icon {
+				font-size: 30px;
+				margin-bottom: 8px;
+			}
+
+			.stat-grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 8px;
+				margin-bottom: 14px;
+			}
+			.stat-card {
+				background: #f7f9f8;
+				border-radius: 8px;
+				padding: 10px 12px;
+			}
+			.stat-label {
+				font-size: 10px;
+				color: #999;
+				margin-bottom: 3px;
+				text-transform: uppercase;
+				letter-spacing: 0.4px;
+			}
+			.stat-value {
+				font-size: 24px;
+				font-weight: 700;
+				color: #1d9e75;
+			}
+			.stat-value.docks {
+				color: #378add;
+			}
+
+			.detail-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-size: 12px;
+				padding: 7px 0;
+				border-bottom: 1px solid #f4f4f4;
+				color: #777;
+			}
+			.detail-row:last-child {
+				border-bottom: none;
+			}
+			.detail-row span:last-child {
+				font-weight: 500;
+				color: #222;
+			}
+
+			#status-bar {
+				padding: 5px 12px;
+				font-size: 11px;
+				color: #bbb;
+				border-top: 1px solid #f0f0f0;
+				flex-shrink: 0;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			/* ════════════════════════════════════════
+         MOBILE / BOTTOM SHEET  (≤ 640px)
+         ════════════════════════════════════════ */
+			@media (max-width: 640px) {
+				#body {
+					flex-direction: column;
+				}
+
+				#sidepanel {
+					width: 100%;
+					border-right: none;
+					border-top: 1px solid #e8e8e8;
+					/* collapsed: just show a drag handle strip */
+					height: 48px;
+					transition: height 0.3s ease;
+					flex-shrink: 0;
+					order: 2;
+				}
+
+				#sidepanel.open {
+					height: 52vh;
+				}
+
+				#map {
+					order: 1;
+					flex: 1;
+					height: auto;
+				}
+
+				/* On mobile the "header" doubles as the drag handle */
+				#panel-header {
+					padding: 10px 14px 8px !important;
+					cursor: pointer;
+				}
+
+				/* Show a visual drag handle bar */
+				#panel-header::before {
+					content: "";
+					display: block;
+					width: 36px;
+					height: 4px;
+					background: #ddd;
+					border-radius: 2px;
+					margin: 0 auto 8px;
+					flex-shrink: 0;
+				}
+
+				#panel-header {
+					flex-direction: column;
+				}
+				#panel-header-inner {
+					display: flex;
+					align-items: flex-start;
+					gap: 8px;
+					width: 100%;
+				}
+
+				/* Always show header on mobile (as the collapsed handle) */
+				#panel-header {
+					display: flex !important;
+				}
+
+				/* Hide content until open */
+				#panel-body {
+					display: none;
+				}
+				#sidepanel.open #panel-body {
+					display: block;
+				}
+				#status-bar {
+					display: none;
+				}
+				#sidepanel.open #status-bar {
+					display: block;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<div id="header">
+				<h1>VeloCity</h1>
+				<p>LA Metro Bike Share</p>
+			</div>
+			<div id="body">
+				<div id="sidepanel" id="sidepanel">
+					<div id="panel-header">
+						<!-- mobile wraps name+close in an inner div -->
+						<div
+							id="panel-header-inner"
+							style="display: flex; align-items: flex-start; gap: 8px; width: 100%">
+							<div id="panel-header-text" style="flex: 1; min-width: 0">
+								<div id="panel-name">Tap a station</div>
+								<div id="panel-id"></div>
+							</div>
+							<button id="panel-close" title="Close" style="display: none">✕</button>
+						</div>
+					</div>
+					<div id="panel-body">
+						<div id="panel-empty">
+							<div class="icon">🚲</div>
+							Click a station on the map<br />to see live details
+						</div>
+						<div id="panel-content" style="display: none">
+							<div class="stat-grid">
+								<div class="stat-card">
+									<div class="stat-label">Bikes</div>
+									<div class="stat-value" id="stat-bikes">—</div>
+								</div>
+								<div class="stat-card">
+									<div class="stat-label">Docks</div>
+									<div class="stat-value docks" id="stat-docks">—</div>
+								</div>
+							</div>
+							<div id="detail-rows"></div>
+						</div>
+					</div>
+					<div id="status-bar">Loading stations…</div>
+				</div>
+
+				<div id="map"></div>
+			</div>
+		</div>
+
+		<script>
+			const isMobile = () => window.innerWidth <= 640;
+
+			const panel = document.getElementById("sidepanel");
+			const panelHeader = document.getElementById("panel-header");
+			const panelClose = document.getElementById("panel-close");
+			const panelEmpty = document.getElementById("panel-empty");
+			const panelContent = document.getElementById("panel-content");
+			const panelName = document.getElementById("panel-name");
+			const panelId = document.getElementById("panel-id");
+
+			// Mobile: tap header to toggle sheet
+			panelHeader.addEventListener("click", (e) => {
+				if (!isMobile()) return;
+				if (e.target === panelClose) return;
+				panel.classList.toggle("open");
+			});
+
+			panelClose.addEventListener("click", (e) => {
+				e.stopPropagation();
+				closePanel();
+			});
+
+			let selectedId = null;
+			let allFeatures = [];
+
+			function showStation(props) {
+				selectedId = props.station_id;
+				panelClose.style.display = "block";
+				panelEmpty.style.display = "none";
+				panelContent.style.display = "block";
+
+				panelName.textContent = props.name;
+				panelId.textContent = "ID: " + props.station_id;
+
+				document.getElementById("stat-bikes").textContent = props.bikes;
+				document.getElementById("stat-docks").textContent = props.docks;
+
+				document.getElementById("detail-rows").innerHTML = `
+          <div class="detail-row"><span>Capacity</span><span>${props.capacity}</span></div>
+          <div class="detail-row"><span>Bikes disabled</span><span>${props.bikes_disabled}</span></div>
+          <div class="detail-row"><span>Docks disabled</span><span>${props.docks_disabled}</span></div>
+          <div class="detail-row"><span>Renting</span><span>${props.is_renting === "true" ? "✅ Yes" : "❌ No"}</span></div>
+          <div class="detail-row"><span>Returning</span><span>${props.is_returning === "true" ? "✅ Yes" : "❌ No"}</span></div>
+        `;
+
+				// On desktop show panel; on mobile expand sheet
+				if (isMobile()) {
+					panel.classList.add("open");
+				}
+
+				highlightSelected();
+			}
+
+			function closePanel() {
+				selectedId = null;
+				panelClose.style.display = "none";
+				panelEmpty.style.display = "block";
+				panelContent.style.display = "none";
+				panelName.textContent = isMobile() ? "Tap a station" : "";
+				panelId.textContent = "";
+				panel.classList.remove("open");
+				highlightSelected();
+			}
+
+			function highlightSelected() {
+				if (!map.getSource("stations")) return;
+				map.setPaintProperty("station-circles", "circle-color", [
+					"case",
+					["==", ["get", "station_id"], selectedId ?? ""],
+					"#0F6E56",
+					"#1D9E75"
+				]);
+				map.setPaintProperty("station-circles", "circle-radius", [
+					"case",
+					["==", ["get", "station_id"], selectedId ?? ""],
+					9,
+					6
+				]);
+			}
+
+			const map = new maplibregl.Map({
+				container: "map",
+				style: "https://demotiles.maplibre.org/style.json",
+				center: [-118.25, 34.05],
+				zoom: 11
+			});
+
+			map.on("load", () => {
+				map.addSource("stations", {
+					type: "geojson",
+					data: { type: "FeatureCollection", features: [] }
+				});
+
+				map.addLayer({
+					id: "station-circles",
+					type: "circle",
+					source: "stations",
+					paint: {
+						"circle-radius": 6,
+						"circle-color": "#1D9E75",
+						"circle-stroke-width": 2,
+						"circle-stroke-color": "#ffffff"
+					}
+				});
+
+				map.on("click", "station-circles", (e) => {
+					showStation(e.features[0].properties);
+				});
+
+				map.on("click", (e) => {
+					const hits = map.queryRenderedFeatures(e.point, { layers: ["station-circles"] });
+					if (!hits.length) closePanel();
+				});
+
+				map.on("mouseenter", "station-circles", () => {
+					map.getCanvas().style.cursor = "pointer";
+				});
+				map.on("mouseleave", "station-circles", () => {
+					map.getCanvas().style.cursor = "";
+				});
+
+				loadStations();
+				setInterval(loadStations, 60000);
+			});
+
+			async function loadStations() {
+				try {
+					const [infoRes, statusRes] = await Promise.all([
+						fetch("https://gbfs.bcycle.com/bcycle_lametro/station_information.json"),
+						fetch("https://gbfs.bcycle.com/bcycle_lametro/station_status.json")
+					]);
+
+					const infoData = await infoRes.json();
+					let statusMap = {};
+					if (statusRes.ok) {
+						const sd = await statusRes.json();
+						for (const s of sd.data?.stations || []) statusMap[s.station_id] = s;
+					}
+
+					const stations = infoData.data?.stations || [];
+					document.getElementById("status-bar").textContent =
+						`${stations.length} stations · updates every 60s`;
+
+					allFeatures = stations
+						.filter((s) => s.lat && s.lon)
+						.map((s) => {
+							const st = statusMap[s.station_id] || {};
+							return {
+								type: "Feature",
+								geometry: { type: "Point", coordinates: [s.lon, s.lat] },
+								properties: {
+									station_id: s.station_id,
+									name: s.name,
+									capacity: s.capacity ?? "—",
+									bikes: st.num_bikes_available ?? "—",
+									docks: st.num_docks_available ?? "—",
+									bikes_disabled: st.num_bikes_disabled ?? "—",
+									docks_disabled: st.num_docks_disabled ?? "—",
+									is_renting: String(st.is_renting ?? false),
+									is_returning: String(st.is_returning ?? false)
+								}
+							};
+						});
+
+					map.getSource("stations").setData({
+						type: "FeatureCollection",
+						features: allFeatures
+					});
+
+					if (selectedId) {
+						const match = allFeatures.find((f) => f.properties.station_id === selectedId);
+						if (match) showStation(match.properties);
+					}
+
+					highlightSelected();
+				} catch (err) {
+					document.getElementById("status-bar").textContent = "Error: " + err.message;
+				}
+			}
+		</script>
+	</body>
+</html>
