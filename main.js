@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import multer from "multer";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
 import session from 'express-session';
@@ -17,7 +16,7 @@ const app = express();
 const VIEWS_DIR = path.join(__dirname, "views");
 const PARTIALS_DIR = path.join(VIEWS_DIR, "partials");
 const PUBLIC_DIR = path.join(__dirname, "public");
-const upload = multer();
+
 const PORT = process.env.PORT || 3003;
 
 // Template engine
