@@ -17,7 +17,7 @@ const app = express();
 const VIEWS_DIR = path.join(__dirname, "views");
 const PARTIALS_DIR = path.join(VIEWS_DIR, "partials");
 const PUBLIC_DIR = path.join(__dirname, "public");
-const upload = multer();
+
 const PORT = process.env.PORT || 3003;
 
 // Template engine
